@@ -41,6 +41,25 @@ def reboot(ip_address):
     browser.select_form('form[action="/reboot"]')
     browser.submit_selected()
 
+def start_process(target_mac, cache_built=False):
+
+    try:
+        target_ip = get_target_device_ip(target_mac)
+        print("[+] Device found. IP Address: " + target_ip)
+        print("[+] Rebooting...")
+        #reboot(target_ip)
+
+    except ValueError as error:
+
+        if not cache_built:
+            print("[+] IP not found in arp cache, updating cache...")
+            build_arp_cache()
+            start_process(target_mac, cache_built=True)
+
+        else:
+            print(error)
+
+
 def main():
     '''
         Checks system arp cache for instance of device. If not found, a function is called to build
@@ -51,24 +70,7 @@ def main():
     target_mac = file_pointer.read().strip()
     file_pointer.close()
 
-    target_ip = None
-
-    try:
-        target_ip = get_target_device_ip(target_mac)
-
-    except ValueError as error:
-
-        print("[+] IP not found in arp cache, updating cache...")
-
-    if not target_ip:
-        build_arp_cache()
-        try:
-            target_ip = get_target_device_ip(target_mac)
-            print("[+] Device found. IP Address: " + target_ip)
-            print("[+] Rebooting...")
-            #reboot(target_ip)
-        except ValueError as error:
-            print(error)
+    start_process(target_mac, cache_built=False)
 
 if __name__ == '__main__':
     main()
